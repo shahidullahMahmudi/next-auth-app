@@ -1,25 +1,31 @@
 
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-let initialized = false;
+const MONGODB_URL = process.env.MONGODB_URL;
+
+
+
+let cached = (global ).mongoose;
+
+if (!cached) {
+  cached = (global).mongoose = {
+    conn: null,
+    promise: null,
+  };
+}
 
 export const connect = async () => {
-  mongoose.set('strictQuery', true);
+  if (cached.conn) return cached.conn;
 
-  if (initialized) {
-    console.log('MongoDB already connected');
-    return;
-  }
-
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: 'next-auth-app',
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+  cached.promise =
+    cached.promise ||
+    mongoose.connect(MONGODB_URL, {
+      dbName: "clerk-next14-db",
+      bufferCommands: false,
+      connectTimeoutMS: 30000,
     });
-    console.log('MongoDB connected');
-    initialized = true;
-  } catch (error) {
-    console.log('MongoDB connection error:', error);
-  }
+
+  cached.conn = await cached.promise;
+
+  return cached.conn;
 };
